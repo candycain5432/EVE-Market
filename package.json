@@ -1,0 +1,23 @@
+{
+  "name": "capsuleer-market",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A browser-only EVE Online market and trading tool built on ESI: station-trading scanner, hub-to-hub hauling, order books and price history.",
+  "scripts": {
+    "start": "node tools/serve.js",
+    "mock": "node tools/mock-esi.js",
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "node --test tests/*.test.js",
+    "test:e2e": "node tools/e2e.mjs",
+    "test:shots": "node tools/e2e.mjs --shots .shots",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "eslint": "^10.0.0",
+    "playwright": "^1.56.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
