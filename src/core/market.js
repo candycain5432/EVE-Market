@@ -66,6 +66,16 @@ class Aggregator {
   }
 }
 
+/**
+ * Aggregate a flat list of raw ESI orders into one row per item.
+ * Exported so the aggregation maths can be tested without the network.
+ */
+export function aggregateOrders(orders, stationIds = null) {
+  const agg = new Aggregator(stationIds);
+  agg.add(orders);
+  return agg.finish();
+}
+
 /** Price at which `share` of the book's volume has been consumed. */
 function depthPrice(sorted, totalQty, share) {
   if (!sorted.length) return null;
@@ -116,7 +126,7 @@ export async function fetchSnapshot({
   const agg = new Aggregator(stationIds);
   let pagesDone = 0;
 
-  await getAllPages('/markets/{region}/orders/'.replace('{region}', regionId), { order_type: 'all' }, {
+  await getAllPages(`/markets/${regionId}/orders/`, { order_type: 'all' }, {
     concurrency: settings().concurrency,
     signal,
     onPage: (orders) => {

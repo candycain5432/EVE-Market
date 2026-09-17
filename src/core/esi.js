@@ -252,13 +252,22 @@ export async function pool(items, fn, { concurrency = 8, signal = null, onProgre
   const results = new Array(list.length);
   let next = 0;
   let done = 0;
+  let failed = false;
 
   const worker = async () => {
     for (;;) {
+      // Stop the whole pool once anything fails or the caller cancels, rather
+      // than letting the other workers grind through the rest of the queue.
+      if (failed) return;
       if (signal && signal.aborted) throw new DOMException('Aborted', 'AbortError');
       const i = next++;
       if (i >= list.length) return;
-      results[i] = await fn(list[i], i);
+      try {
+        results[i] = await fn(list[i], i);
+      } catch (err) {
+        failed = true;
+        throw err;
+      }
       done++;
       if (onProgress) onProgress(done, list.length);
     }

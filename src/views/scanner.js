@@ -17,6 +17,7 @@ const state = {
   meta: null,
   mode: 'station',
   depthPrices: true,
+  wholeRegion: false,
   busy: false,
 };
 
@@ -41,12 +42,16 @@ export function renderScanner(root) {
       numberField('Volume share', s.volumeShare, (v) => saveSettings({ volumeShare: v == null ? 0.15 : v }), { min: 0, max: 1, step: 0.01, width: '100px', hint: 'of daily units you win' }),
       numberField('Candidates', s.historyCandidates, (v) => saveSettings({ historyCandidates: Math.max(10, v || 200) }), { min: 10, max: 1000, width: '100px', hint: 'items given a history lookup' }),
       h('div.field', {}, h('label', {}, 'Pricing'),
-        checkField('Use 5% depth prices', state.depthPrices, (v) => { state.depthPrices = v; })),
+        checkField('Use 5% depth prices', state.depthPrices, (v) => { state.depthPrices = v; }),
+        checkField('Whole region', state.wholeRegion, (v) => { state.wholeRegion = v; })),
       h('div.field', {}, h('label', {}, ' '),
         h('div.btn-row', {},
           h('button.btn', { onclick: () => runScan(root, results, summary, false) }, 'Scan market'),
           h('button.btn.btn-ghost', { onclick: () => runScan(root, results, summary, true), title: 'Ignore the cached snapshot and re-download every order page' }, 'Force refresh'))),
     ),
+    state.wholeRegion
+      ? h('div.note', {}, h('strong', {}, 'Whole-region mode'), ' — prices come from anywhere in the region, public player structures included. Good for spotting what the freeport markets are doing, but the two sides of a trade may be twenty jumps apart.')
+      : null,
     h('div.note', {}, `Fees applied: ${feeSummary()}. `,
       state.mode === 'station'
         ? 'Buy-order → sell-order pays the broker fee twice plus sales tax on the sale.'
@@ -83,7 +88,7 @@ async function runScan(root, results, summary, force) {
 
     const snapshot = await fetchSnapshot({
       regionId: hubDef.regionId,
-      stationIds: [hubDef.id],
+      stationIds: state.wholeRegion ? null : [hubDef.id],
       signal,
       force,
       onProgress: (d, t, l) => setProgress(d, t, l),
@@ -146,7 +151,7 @@ async function runScan(root, results, summary, force) {
         ask: c.row.ask,
         bid5: c.row.bid5,
         ask5: c.row.ask5,
-        cost: c.trade.profit != null ? c.trade.cost : null,
+        cost: c.trade.cost,
         profit: c.trade.profit,
         margin: c.trade.margin,
         dailyVolume: stats.avgVolume,
@@ -199,12 +204,33 @@ function paint(results, summary) {
   const s = settings();
 
   if (meta) {
-    const totalDaily = state.rows.reduce((acc, r) => acc + r.profitPerDay, 0);
+    // Each row's profit/day assumes it gets the whole wallet, so summing them
+    // would be fiction. Spend the capital once, best return on ISK first.
+    let remaining = s.capital;
+    let deployed = 0;
+    let portfolioDaily = 0;
+    let picked = 0;
+    const byReturn = [...state.rows]
+      .filter((r) => r.iskInvested > 0 && r.profitPerDay > 0)
+      .sort((a, b) => (b.profitPerDay / b.iskInvested) - (a.profitPerDay / a.iskInvested));
+    for (const r of byReturn) {
+      if (remaining <= 0) break;
+      const invest = Math.min(r.iskInvested, remaining);
+      portfolioDaily += r.profitPerDay * (invest / r.iskInvested);
+      remaining -= invest;
+      deployed += invest;
+      picked++;
+    }
+
     mount(summary, panel(null, null, h('div.stats', {},
-      stat('Hub', meta.hubDef.name, meta.hubDef.station),
-      stat('Items with a book', num(meta.scanned), `${num(meta.snapshot.orderCount)} orders at station`),
+      stat(state.wholeRegion ? 'Region' : 'Hub',
+        state.wholeRegion ? meta.hubDef.region : meta.hubDef.name,
+        state.wholeRegion ? 'every station and public structure' : meta.hubDef.station),
+      stat('Items with a book', num(meta.scanned),
+        `${num(meta.snapshot.orderCount)} orders ${state.wholeRegion ? 'in region' : 'at station'}`),
       stat('Opportunities', num(meta.kept), `from ${num(meta.candidates || 0)} candidates`),
-      stat('Modelled profit/day', iskShort(totalDaily), `at ${pct(s.volumeShare, 0)} volume share`),
+      stat('Profit/day on your capital', iskShort(portfolioDaily),
+        `${num(picked)} items · ${iskShort(deployed)} deployed`),
       stat('Snapshot', ago(meta.snapshot.fetchedAt), `scan took ${(meta.elapsed / 1000).toFixed(1)}s`),
     )));
   }

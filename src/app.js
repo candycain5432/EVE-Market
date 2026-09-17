@@ -171,9 +171,6 @@ async function warmIndex() {
 // ---- boot ------------------------------------------------------------------
 
 window.addEventListener('hashchange', route);
-window.addEventListener('settings-changed', () => {
-  if (currentRoute === 'settings') return;   // the settings page repaints itself
-});
 
 setupSearch();
 route();

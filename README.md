@@ -90,15 +90,21 @@ Everything cached is local. The only network traffic is to `esi.evetech.net`.
 ## Development
 
 ```bash
-npm start        # dev server on :8787
-npm run mock     # deterministic fake ESI on :8788, for working offline
-npm test         # end-to-end browser test against the mock (needs Playwright)
-npm run lint     # ESLint
+npm start          # dev server on :8787
+npm run mock       # deterministic fake ESI on :8788, for working offline
+npm test           # unit tests + end-to-end browser test
+npm run test:unit  # trade maths only — fast, no browser needed
+npm run test:e2e   # drives the real UI in headless Chromium (needs Playwright)
+npm run lint       # ESLint
 ```
 
-`npm test` boots the mock ESI, serves the site, drives it in headless Chromium
-and fails on any console error. `npm run test:shots` also writes screenshots of
-every page to `.shots/`.
+`tests/unit.test.js` pins down the parts that must not drift: the fee model, the
+per-trade profit formulas, the order-book aggregation (including the depth price
+that ignores bait orders) and the history statistics.
+
+`npm run test:e2e` boots the mock ESI, serves the site, drives every view in
+headless Chromium and fails on any console error. `npm run test:shots` also
+writes screenshots of every page to `.shots/`.
 
 To point the app at the mock by hand, from the browser console:
 
@@ -121,6 +127,7 @@ src/core/store.js       settings + watchlist (localStorage)
 src/views/              scanner, hauling, item, watchlist, settings
 src/ui/                 table, chart, progress bar, form controls
 tools/                  dev server, mock ESI, end-to-end test
+tests/                  unit tests for the trade maths
 ```
 
 ### A note on ESI addressing
