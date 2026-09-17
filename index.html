@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Capsuleer Market — EVE Online trading tool</title>
+<meta name="description" content="A fast, private, browser-only market and trading tool for EVE Online, powered by ESI." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b0f14'/%3E%3Cpath d='M6 22l6-8 5 5 9-11' stroke='%23f0a93b' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="assets/css/app.css" />
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <a class="brand" href="#/scanner">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-text">Capsuleer<em>Market</em></span>
+    </a>
+
+    <nav class="nav" id="nav">
+      <a href="#/scanner" data-route="scanner">Station&nbsp;Trading</a>
+      <a href="#/hauling" data-route="hauling">Hauling</a>
+      <a href="#/item" data-route="item">Item</a>
+      <a href="#/watchlist" data-route="watchlist">Watchlist</a>
+      <a href="#/settings" data-route="settings">Settings</a>
+    </nav>
+
+    <div class="search-wrap">
+      <input id="global-search" type="search" placeholder="Search an item…  (/)" autocomplete="off" spellcheck="false" />
+      <div id="search-results" class="search-results" hidden></div>
+    </div>
+  </header>
+
+  <div id="progress" class="progress" hidden>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="progress-label" id="progress-label"></div>
+    <button class="btn btn-ghost btn-sm" id="progress-cancel" type="button">Cancel</button>
+  </div>
+
+  <main id="view" class="view"></main>
+
+  <footer class="footer">
+    <span>Data from <a href="https://esi.evetech.net/ui/" target="_blank" rel="noreferrer noopener">EVE Swagger Interface</a> · nothing leaves your browser</span>
+    <span id="esi-status" class="esi-status">ESI: connecting…</span>
+  </footer>
+</div>
+
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<script type="module" src="src/app.js"></script>
+<noscript><p style="padding:2rem;color:#e6edf3">This tool needs JavaScript — it talks to EVE's ESI API directly from your browser.</p></noscript>
+</body>
+</html>
